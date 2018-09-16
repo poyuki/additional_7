@@ -1,10 +1,14 @@
 module.exports = function solveSudoku(matrix) {
-    let singleSuggestions;
-    let zeroIndexes=getIndexesOfZeros(matrix);
-    zeroIndexes=getSugetstionsForZeros(zeroIndexes,matrix);
-    let simpleIndex=simplifySugestions(zeroIndexes);
-    singleSuggestions=singlesSuggestions(simpleIndex);
-    let solvedMatrix=setSimpleSuggestions(singlesSuggestions,matrix);
+    let matrixForSolve = matrix;
+
+    while (!Solved(matrixForSolve)) {
+        let zeroIndexes = getIndexesOfZeros(matrixForSolve);
+        zeroIndexes = getSugetstionsForZeros(zeroIndexes, matrixForSolve);
+        let simpleIndex = simplifySugestions(zeroIndexes);
+        let singleSuggestions = singlesSuggestions(simpleIndex);
+        matrixForSolve = setSimpleSuggestions(singleSuggestions, matrixForSolve);
+    }
+    return matrixForSolve;
 };
 
 function getIndexesOfZeros(matrix){
@@ -117,11 +121,22 @@ function singlesSuggestions(simpleIndex) {
     return singlesSuggestions;
 }
 function setSimpleSuggestions(simpleSuggestions,matrix) {
-    let matrixForSolve=marix;
+    let matrixForSolve=matrix;
     simpleSuggestions.forEach((row,i,map)=>{
         row.forEach((col,j,map)=>{
-            let r=map.get(i).get(j);
+            if(col.singleRowSuggest!==undefined) {
+                matrixForSolve[i][j]=parseInt(col.singleRowSuggest);
+            }
         });
-    })
-
+    });
+    return matrixForSolve;
+}
+function Solved(matrixForSolve) {
+    let result=true;
+    matrixForSolve.forEach((row,i)=>{
+        row.forEach((column,j)=>{
+            if(matrixForSolve[i][j]===0) result=false;
+        });
+    });
+    return result;
 }
