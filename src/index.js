@@ -1,16 +1,71 @@
 module.exports = function solveSudoku(matrix) {
-    let matrixForSolve = matrix;
-
-    while (!Solved(matrixForSolve)) {
-        let zeroIndexes = getIndexesOfZeros(matrixForSolve);
-        zeroIndexes = getSugetstionsForZeros(zeroIndexes, matrixForSolve);
-        let simpleIndex = simplifySugestions(zeroIndexes);
-        let singleSuggestions = singlesSuggestions(simpleIndex);
-        matrixForSolve = setSimpleSuggestions(singleSuggestions, matrixForSolve);
+    let matrixForSolve = matrix,sugestions=[1,2,3,4,5,6,7,8,9];
+    let closerZero=getClosestZero(matrixForSolve);
+    if(closerZero.length) {
+        sugestions.some((val) => {
+            if (isGoodSuggestion(matrixForSolve, closerZero, val)) {
+                matrixForSolve[closerZero[0]][closerZero[1]] = val;
+                let tempMatrix = solveSudoku(matrixForSolve);
+                if (isSolved(tempMatrix)) {
+                    matrixForSolve = tempMatrix;
+                    return true;
+                }
+                matrixForSolve[closerZero[0]][closerZero[1]]=0;
+            }
+        });
     }
     return matrixForSolve;
 };
 
+function getClosestZero(MatrixForSolve) {
+    let res=[];
+    MatrixForSolve.forEach((row,i)=>{
+        if(!res.length) {
+            row.forEach((col, j) => {
+                if (col === 0 && !res.length) {
+                    res.push(i, j);
+                }
+            });
+        }
+    });
+    return res;
+}
+function isGoodSuggestion(matrixForSolve,closerZero,sugestion) {
+    let rowAndColIsGood=true,result=true;
+    matrixForSolve.forEach((row,index)=>{
+        if(index===closerZero[0]){
+            row.forEach((col)=>{
+                if(col===sugestion) rowAndColIsGood=false;
+            });
+        }
+        if(row[closerZero[1]]===sugestion) rowAndColIsGood=false;
+    });
+    if(rowAndColIsGood){
+        let sectionCoord=[Math.floor(closerZero[0]/3)*3,Math.floor(closerZero[1]/3)*3];
+        for(let i=sectionCoord[0];i<sectionCoord[0]+3;i++){
+            for(let j=sectionCoord[1];j<sectionCoord[1]+3;j++){
+                if(matrixForSolve[i][j]===sugestion){
+                    result=false;
+                }
+            }
+        }
+    }else{
+        result=false;
+    }
+    return result;
+}
+function isSolved(matrix) {
+    let result=true;
+    matrix.forEach((row)=>{
+        row.forEach((val)=>{
+            if(val === 0){
+                result=false;
+            }
+        });
+    });
+    return result
+}
+/*
 function getIndexesOfZeros(matrix){
     let zeroIndexes=new Map(),i,j;
     for(i=0;i<9;i++){
@@ -89,13 +144,17 @@ function simplifySugestions(zeroIndexes) {
 }
 
 function singlesSuggestions(simpleIndex) {
-    let singlesSuggestions=new Map();
+    let singlesSuggestions=new Map(),colSuggest=new Map();
+    for(let r=0;r<9;r++){
+        colSuggest.set(r,new Map());
+    }
     simpleIndex.forEach((value,i,map)=>{
         singlesSuggestions.set(i,new Map());
         /**Single Row Suggestions*/
-        let rowSuggests='',rowSuggestsObj={},singleRowSuggest=[];
+       /* let rowSuggests='',rowSuggestsObj={},singleRowSuggest=[];
         value.forEach((value,j,map)=>{
             singlesSuggestions.get(i).set(j,{});
+            colSuggest.get(j).set(i,value);
             rowSuggests+=value;
         });
         for(let k=0;k<rowSuggests.length;k++){
@@ -117,6 +176,31 @@ function singlesSuggestions(simpleIndex) {
             });
         }
         /**Single Row Suggestions ended*/
+   /* });
+
+    colSuggest.forEach((col,j,map)=>{
+        let colSuggestStr='',colSuggestsObj={},singleColSuggest=[];
+        col.forEach((val,i)=>{
+            colSuggestStr+=val;
+        });
+        for(let k=0;k<colSuggestStr.length;k++){
+            if(colSuggestsObj.hasOwnProperty(colSuggestStr.charAt(k))){
+                colSuggestsObj[colSuggestStr.charAt(k)]++;
+            }else{
+                colSuggestsObj[colSuggestStr.charAt(k)]=1;
+            }
+        }
+        let ColSuggestsObjKeys= Object.keys(colSuggestsObj);
+        ColSuggestsObjKeys.forEach((item)=>{
+            if(colSuggestsObj[item]===1) singleColSuggest.push(item);
+        });
+        if (singleColSuggest.length) {
+            singleColSuggest.forEach((el)=>{
+                col.forEach((val, i, map) => {
+                    if (val.indexOf(el) !== -1) singlesSuggestions.get(i).get(j).singleColSuggest=el
+                });
+            });
+        }
     });
     return singlesSuggestions;
 }
@@ -124,14 +208,22 @@ function setSimpleSuggestions(simpleSuggestions,matrix) {
     let matrixForSolve=matrix;
     simpleSuggestions.forEach((row,i,map)=>{
         row.forEach((col,j,map)=>{
-            if(col.singleRowSuggest!==undefined) {
+            if(col.singleRowSuggest!==undefined&&col.singleColSuggest!==undefined&&col.singleRowSuggest===col.singleColSuggest) {
                 matrixForSolve[i][j]=parseInt(col.singleRowSuggest);
+            }else if(col.singleRowSuggest!==undefined&&col.singleColSuggest===undefined){
+                matrixForSolve[i][j]=parseInt(col.singleRowSuggest);
+            }else if(col.singleRowSuggest===undefined&&col.singleColSuggest!==undefined){
+                matrixForSolve[i][j]=parseInt(col.singleColSuggest);
             }
         });
     });
     return matrixForSolve;
 }
-function Solved(matrixForSolve) {
+
+/**
+ * @return {boolean}
+ */
+/*function Solved(matrixForSolve) {
     let result=true;
     matrixForSolve.forEach((row,i)=>{
         row.forEach((column,j)=>{
@@ -140,3 +232,4 @@ function Solved(matrixForSolve) {
     });
     return result;
 }
+*/
